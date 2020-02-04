@@ -1,15 +1,18 @@
 # Replace python environment to suit your needs
-ENV["PYTHON"] = "/home/mysterio/miniconda3/envs/pydata/bin/python"
-Pkg.build("PyCall")  # Build PyCall to suit the specified Python env
+ENV["PYTHON"] = "YOUR/PYTHON/ENVIRONMENT/DIRECTORY/HERE"
 
+# Build PyCall to suit the specified Python env
+Pkg.build("PyCall")  
+
+# Import needed libraries
 using PyCall
 using Statistics
 using Plots
 
-# import whatever
+# Import sklearn dataset generator
 data = pyimport("sklearn.datasets")
 
-#
+# Generate clustered data
 X, y = data.make_blobs(n_samples=5000, n_features=3, centers=3, cluster_std=0.9, random_state=10)
 
 # Visualize the feature space
