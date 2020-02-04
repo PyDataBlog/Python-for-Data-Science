@@ -16,6 +16,6 @@ data = pyimport("sklearn.datasets")
 X, y = data.make_blobs(n_samples=5000, n_features=3, centers=3, cluster_std=0.9, random_state=10)
 
 # Visualize the feature space
-scatter3d(X[:, 1], X[:, 2], X[:, 3], color=y, legend=false, st=:surface,
+scatter3d(X[:, 1], X[:, 2], X[:, 3], color=y, legend=false,
  xlabel="Feature #1", ylabel="Feature #2", zlabel="Feature #3",
  title="3D View Of Feature Space Coloured By Assigned Cluster")
