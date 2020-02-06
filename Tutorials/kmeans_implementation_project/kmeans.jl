@@ -7,70 +7,88 @@ using Statistics
 using LinearAlgebra
 using Plots
 
-# import whatever
+# import sklearn datasets
 data = pyimport("sklearn.datasets")
 
 X, y = data.make_blobs(n_samples=100000, n_features=3, centers=3, cluster_std=0.9, random_state=80)
 
 
 # Visualize the feature space
- scatter3d(X[:, 1], X[:, 2], X[:, 3], legend=false,
-  xlabel="Feature #1", ylabel="Feature #2", zlabel="Feature #3",
-  title="3D View Of The Feature Space", titlefontsize=11)
-
-# Visualize the feature space using the given labels
-scatter3d(X[:, 1], X[:, 2], X[:, 3], color=y, legend=false,
+scatter3d(X[:, 1], X[:, 2], X[:, 3], legend=false,
  xlabel="Feature #1", ylabel="Feature #2", zlabel="Feature #3",
- title="3D View Of The Feature Space Coloured By Assigned Cluster",
- titlefontsize=11)
-
-X_list = collect(eachrow(X))
+ title="3D View Of The Feature Space Initialized", titlefontsize=11)
 
 
+
+""" Kmeans(X, k, max_iters = 300, tol = 1e-5)
+
+    This function implements the kmeans algorithm and returns the assigned labels,
+    representative centroids
 """
-"""
-function init_kmeans(X, k; max_iters = 100, tol = 1e-5)
-    # Reshape 2D design matrix as a list of 1D arrays
-    X = collect(eachrow(X))
+function Kmeans(X, k; max_iters = 300, tol = 1e-5)
+    # Reshape 2D array to a 1D array with length of all training examples
+    # where each example is of size (n, ) ie the new array is just a list of example array
+    X_array_list = collect(eachrow(X))
 
-    # Get some info on the data being passed
-    N = length(X)
-    n = length(X[1])
+    # Save some info on the incoming data
+    N = length(X_array_list)  # Length of all training examples
+    n = length(X_array_list[1])  # Length of a single training example
+    distances = zeros(N)  # Empty vector for all training examples. Useful later
 
-    # Initialize some parameters based on the info
-    distances = zeros(N)
-    # Initiate a representative vector for each cluster (centroids)
-    reps = [zeros(n) for i in 1:k]
-    # randomly assign cluster to each example
-    assignment = [rand(1:k) for i in 1:N]
+    # Step 1: Random initialization
+    reps_centroids = [zeros(n) for grp = 1:k]  # Initiate centroids for each
+    labels = rand(1:k, N)  # Randomly assign labels (between 1 to k) to all training examples
 
-    grp_list = []
+    J_previous = Inf
 
-    # rep j representative is average of points in cluster j.
-    for j in 1:k
-        # An array representing the index of each assigned label
-        groups = [i for i in 1:N if assignment[i] == j];
+    for iter = 1:max_iters
 
-        push!(grp_list, groups) # just a convinient way of populating grp_list with groups
+        # Step 2: Update the representative centroids for each group
+        for j = 1:k
+            # get group indices for each group
+            group_idx = [i for i = 1:N if labels[i] == j]
 
-        # Update the initialized reps array with the average of points in 
-        reps[j] = sum(X[groups]) / length(groups);
+            # use group indices to locate each group
+            reps_centroids[j] = mean(X_array_list[group_idx]);
+        end;
+
+        # Step 3: Update the group labels
+        for i = 1:N
+            # compute the distance between each example and the updated representative centroid
+            nearest_rep_distance = [norm(X_array_list[i] - reps_centroids[x]) for x = 1:k]
+
+            # update distances and label arrays with value and index of closest neighbour
+            # findmin returns the min value & index location
+            distances[i], labels[i] = findmin(nearest_rep_distance)
+        end;
+
+        # Step 4: Compute the clustering cost
+        J = (norm(distances)^ 2) / N
+
+        # Show progress and terminate if J stopped decreasing.
+        println("Iteration ", iter, ": Jclust = ", J, ".")
+
+        # Final Step 5: Check for convergence
+        if iter > 1 && abs(J - J_previous) < (tol * J)
+            # TODO: Calculate the sum of squares
+
+            # Terminate algorithm with the assumption that K-means has converged
+            return labels, reps_centroids
+
+        elseif iter == max_iters && abs(J - J_previous) > (tol * J)
+            throw(error("Failed to converge Check data and/or implementation or increase max_iterations"))
+        end
+
+        J_previous = J
     end
-
-    return reps, assignment, grp_list
 
 end
 
 
-init_centroids, init_labels, init_group_idx = init_kmeans(X, 3)
+predicted_labels, centroids = Kmeans(X, 3)
 
 
 # Visualize the feature space
- scatter3d(X[:, 1], X[:, 2], X[:, 3], legend=false, color=init_labels,
-  xlabel="Feature #1", ylabel="Feature #2", zlabel="Feature #3",
-  title="3D View Of The Feature Space Initialized")
-
-scatter3d!(init_centroids[1], init_centroids[2], init_centroids[3],
- markershape=:star4, markersize=15,color="red")
-
-    
+scatter3d(X[:, 1], X[:, 2], X[:, 3], legend=false, color = predicted_labels,
+    xlabel="Feature #1", ylabel="Feature #2", zlabel="Feature #3",
+    title="3D View Of The Feature Space Colored by Predicted Class")
