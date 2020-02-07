@@ -98,7 +98,7 @@ scatter3d!(cluster_centres[:, 1], cluster_centres[:, 2], cluster_centres[:, 3],
 markershape=:star4, markersize=15, color="red",legend=false)
 
 
-function sum_of_squares(x, centroid, labels, k)
+function sum_of_squares(x, labels, k)
     N = length(x)
     ss = 0
 
@@ -108,8 +108,10 @@ function sum_of_squares(x, centroid, labels, k)
         group_length = length(group_data)
         group_center = mean(group_data)
 
+        println(group_center)
+        
         for ex = 1:group_length
-            group_distance = group_data[ex] .- centroid[j]
+            group_distance = group_data[ex] .- group_center
             squared_distance = group_distance .^ 2
             total_squared_distance = sum(squared_distance)
 
@@ -122,4 +124,4 @@ end
 
 X_list = collect(eachrow(X))
 
-@time sum_of_squares(X_list, cluster_centres, predicted_labels, 3)
+@time sum_of_squares(X_list, predicted_labels, 3)
