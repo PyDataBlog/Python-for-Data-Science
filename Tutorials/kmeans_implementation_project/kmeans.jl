@@ -10,7 +10,7 @@ using Plots
 # import sklearn datasets
 data = pyimport("sklearn.datasets")
 
-X, y = data.make_blobs(n_samples=100000, n_features=3, centers=3, cluster_std=0.9, random_state=80)
+X, y = data.make_blobs(n_samples=1000000, n_features=3, centers=3, cluster_std=0.9, random_state=80)
 
 
 # Visualize the feature space
@@ -85,10 +85,41 @@ function Kmeans(X, k; max_iters = 300, tol = 1e-5)
 end
 
 
-predicted_labels, centroids = Kmeans(X, 3)
+@time predicted_labels, centroids = Kmeans(X, 3)
 
+cluster_centres = reduce(vcat, centroids')
 
 # Visualize the feature space
 scatter3d(X[:, 1], X[:, 2], X[:, 3], legend=false, color = predicted_labels,
     xlabel="Feature #1", ylabel="Feature #2", zlabel="Feature #3",
     title="3D View Of The Feature Space Colored by Predicted Class")
+
+scatter3d!(cluster_centres[:, 1], cluster_centres[:, 2], cluster_centres[:, 3],
+markershape=:star4, markersize=15, color="red",legend=false)
+
+
+function sum_of_squares(x, centroid, labels, k)
+    N = length(x)
+    ss = 0
+
+    for j = 1:k
+        idx = [x for x = 1:N if labels[x] == j]
+        group_data = x[idx]
+        group_length = length(group_data)
+        group_center = mean(group_data)
+
+        for ex = 1:group_length
+            group_distance = group_data[ex] .- centroid[j]
+            squared_distance = group_distance .^ 2
+            total_squared_distance = sum(squared_distance)
+
+            ss += total_squared_distance
+        end
+    end
+
+    return ss
+end
+
+X_list = collect(eachrow(X))
+
+@time sum_of_squares(X_list, cluster_centres, predicted_labels, 3)
