@@ -7,6 +7,7 @@ using Statistics
 using LinearAlgebra
 using Plots
 using BenchmarkTools
+using Distances
 
 
 """
@@ -19,7 +20,7 @@ function Kmeans(X::Array, k::Int64; max_iters::Int64=300, tol=1e-5)
 
     # Update centroids & labels with closest members until convergence
     for iter = 1:max_iters
-        
+
     end
-    
+
 end
