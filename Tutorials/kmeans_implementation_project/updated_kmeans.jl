@@ -12,7 +12,7 @@ using Distances
 
 """
 """
-function Kmeans(X::Array, k::Int64; max_iters::Int64=300, tol=1e-5)
+function Kmeans(design_matrix::Array{Float64, 2}, k::Int64; max_iters::Int64=300, tol=1e-5)
     # randomly get centroids for each group
     n_row, n_col = size(design_matrix)
     rand_indices = rand(1:n_row, k)
@@ -20,7 +20,11 @@ function Kmeans(X::Array, k::Int64; max_iters::Int64=300, tol=1e-5)
 
     # Update centroids & labels with closest members until convergence
     for iter = 1:max_iters
-
+        Nothing
     end
 
+    return centroids
+
 end
+
+Kmeans(X, 3)
