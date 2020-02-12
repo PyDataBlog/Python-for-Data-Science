@@ -7,21 +7,60 @@ using PyCall
 using Plots
 using LinearAlgebra
 using Statistics
+using StatsBase
 using BenchmarkTools
 using Distances
 
 
-
 # import sklearn datasets
 data = pyimport("sklearn.datasets")
-
 X, y = data.make_blobs(n_samples=1000000, n_features=3, centers=3, cluster_std=0.9, random_state=80)
 
 
-ran_k = 3
-ran_x = randn(100, ran_k)
-ran_l = rand(1:ran_k, 100)
-ran_c = randn(ran_k, ran_k)
+"""
+"""
+function smart_init(X::Array{Float64, 2}, k::Int; init::String="k-means++")
+    n_row, n_col = size(X)
+
+    if init == "k-means++"
+        # randonmly select the first centroid from the data (X)
+        centroids = zeros(k, n_col)
+        rand_idx = rand(1:n_row)
+        centroids[1, :] = X[rand_idx, :]
+
+        # compute distances from the first centroid chosen to all the other data points
+        first_centroid_matrix = convert(Matrix, centroids[1, :]')
+        # flattened vector (n_row,)
+        distances = vec(pairwise(Euclidean(), X, first_centroid_matrix, dims = 1))
+
+        for i = 2:k
+            # choose the next centroid, the probability for each data point to be chosen
+            # is directly proportional to its squared distance from the nearest centroid
+            prob = distances .^ 2
+            r_idx = sample(1:n_row, ProbabilityWeights(prob))
+            centroids[i, :] = X[r_idx, :]
+
+            if i == (k-1)
+                break
+            end
+
+            # compute distances from the centroids to all data points
+            # and update the squared distance as the minimum distance to all centroid
+            current_centroid_matrix = convert(Matrix, centroids[i, :]')
+            new_distances = vec(pairwise(Euclidean(), X, current_centroid_matrix, dims = 1))
+
+            distances = minimum([distances, new_distances])
+
+        end
+
+    else
+        rand_indices = rand(1:n_row, k)
+        centroids = X[rand_indices, :]
+
+    end
+
+    return centroids, n_row, n_col
+end
 
 
 """
@@ -41,19 +80,13 @@ function sum_of_squares(x::Array{Float64,2}, labels::Array{Int64,1}, centre::Arr
 end
 
 
-sum_of_squares(ran_x, ran_l, ran_c, ran_k)
-
-
-
-
 """
 """
-function Kmeans(design_matrix::Array{Float64, 2}, k::Int64; max_iters::Int64=300, tol=1e-5, verbose::Bool=true)
+function Kmeans(design_matrix::Array{Float64, 2}, k::Int64; k_init::String="k-means++",
+    max_iters::Int64=300, tol=1e-4, verbose::Bool=true)
 
-    # randomly get centroids for each group
-    n_row, n_col = size(design_matrix)
-    rand_indices = rand(1:n_row, k)
-    centroids = design_matrix[rand_indices, :]
+    centroids, n_row, n_col = smart_init(design_matrix, k, init=k_init)
+
     labels = rand(1:k, n_row)
     distances = zeros(n_row)
 
@@ -80,7 +113,7 @@ function Kmeans(design_matrix::Array{Float64, 2}, k::Int64; max_iters::Int64=300
 
         # Final Step 5: Check for convergence
         if iter > 1 && abs(J - J_previous) < (tol * J)
-            # TODO: Calculate the sum of squares
+
             sum_squares = sum_of_squares(design_matrix, labels, centroids, k)
             # Terminate algorithm with the assumption that K-means has converged
             if verbose
@@ -99,14 +132,11 @@ function Kmeans(design_matrix::Array{Float64, 2}, k::Int64; max_iters::Int64=300
 end
 
 
-Kmeans(X, 3)
-
-
 @btime begin
     num = []
     ss = []
     for i = 2:10
-        l, c, s = Kmeans(X, i, verbose=false)
+        l, c, s = Kmeans(X, i, k_init="k-means++", verbose=false)
         push!(num, i)
         push!(ss, s)
     end
@@ -115,4 +145,13 @@ end
 
 plot(num, ss, ylabel="Sum of Squares", xlabel="Number of Iterations",
      title = "Test For Heterogeneity Per Iteration", legend=false)
+
+
+function test_speed(x)
+    for i = 2:10
+        l, c, s = Kmeans(X, i, k_init="k-means++", verbose=false)
+    end
+end
+
+r = @benchmark test_speed(X) samples=7 seconds=300
 
