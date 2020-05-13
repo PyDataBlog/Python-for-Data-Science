@@ -48,7 +48,7 @@ portfolio = {'Returns': port_returns,
              'Volatility': port_volatility}
 
 # extend original dictionary to accomodate each ticker and weight in the portfolio
-for counter,symbol in enumerate(selected):
+for counter,symbol in enumerate(cov_annual.columns):
     portfolio[symbol+' Weight'] = [Weight[counter] for Weight in stock_weights]
 
 # make a nice dataframe of the extended dictionary
