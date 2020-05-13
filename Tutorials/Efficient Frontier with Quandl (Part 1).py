@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # get adjusted closing prices of 5 selected companies with Quandl
-quandl.ApiConfig.api_key = 'zcfJ6696mcZScjzsyeta'
+quandl.ApiConfig.api_key = 'YOUR-API-KEY'
 selected = ['CNP', 'F', 'WMT', 'GE', 'TSLA']
 data = quandl.get_table('WIKI/PRICES', ticker = selected,
                         qopts = { 'columns': ['date', 'ticker', 'adj_close'] },
